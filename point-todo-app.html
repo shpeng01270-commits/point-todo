@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="ポイントTODO">
+  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="icon" href="icon.png">
+  <title>ポイントTODO</title>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700;900&family=DotGothic16&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f0f4ff;
+      --surface: #ffffff;
+      --surface2: #f4f6ff;
+      --accent: #7c9cff;
+      --accent-dark: #5578e8;
+      --accent2: #b89cff;
+      --accent3: #72d4c4;
+      --accent-soft: rgba(124,156,255,0.12);
+      --reward: #ff8faa;
+      --daily: #ffb347;
+      --daily-soft: rgba(255,179,71,0.13);
+      --daily-border: rgba(255,179,71,0.45);
+      --weekly: #7ec8e3;
+      --weekly-soft: rgba(126,200,227,0.13);
+      --weekly-border: rgba(126,200,227,0.5);
+      --spot: #b89cff;
+      --spot-soft: rgba(184,156,255,0.13);
+      --spot-border: rgba(184,156,255,0.45);
+      --text: #2e3260;
+      --text-muted: #8e93c0;
+      --border: rgba(124,156,255,0.2);
+      --radius: 18px;
+      --shadow: 0 4px 20px rgba(100,120,220,0.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: 'Zen Maru Gothic', sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; min-height: 100dvh; overflow-x: hidden;
+    }
+
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 60% 40% at 80% 10%, rgba(184,156,255,0.18) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 35% at 10% 80%, rgba(114,212,196,0.15) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 30% at 50% 50%, rgba(124,156,255,0.08) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+
+    .app { position: relative; z-index: 1; max-width: 430px; margin: 0 auto; padding: 0 0 110px; }
+
+    /* ===== SCREENS ===== */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* ===== HEADER ===== */
+    .header { padding: 52px 20px 18px; text-align: center; }
+    .header-title { font-size: 11px; font-family: 'DotGothic16', monospace; color: var(--accent); letter-spacing: 4px; margin-bottom: 6px; opacity: 0.8; }
+    .header h1 { font-size: 26px; font-weight: 900; background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+    /* ===== POINTS CARD ===== */
+    .points-card { margin: 0 16px 20px; background: linear-gradient(145deg, #fff 0%, #eef1ff 100%); border: 1px solid rgba(124,156,255,0.25); border-radius: 28px; padding: 24px; text-align: center; position: relative; overflow: hidden; box-shadow: 0 8px 32px rgba(100,120,220,0.12), inset 0 1px 0 rgba(255,255,255,0.9); }
+    .points-card::before { content: '★'; position: absolute; top: -24px; right: -8px; font-size: 130px; opacity: 0.05; color: var(--accent2); }
+    .points-label { font-size: 11px; font-family: 'DotGothic16', monospace; color: var(--text-muted); letter-spacing: 3px; margin-bottom: 8px; }
+    .points-value { font-size: 64px; font-weight: 900; line-height: 1; background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; filter: drop-shadow(0 2px 8px rgba(124,156,255,0.25)); }
+    .points-value.pop { animation: popAnim 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+    .points-value.shrink { animation: shrinkAnim 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+    @keyframes popAnim { 0%{transform:scale(1)} 50%{transform:scale(1.18)} 100%{transform:scale(1)} }
+    @keyframes shrinkAnim { 0%{transform:scale(1)} 30%{transform:scale(0.88)} 100%{transform:scale(1)} }
+    .points-unit { font-size: 13px; color: var(--text-muted); margin-top: 4px; font-family: 'DotGothic16', monospace; letter-spacing: 2px; }
+    .use-point-btn { margin-top: 16px; background: linear-gradient(135deg, #ffb3c6 0%, #ff8faa 100%); color: #fff; border: none; border-radius: 14px; padding: 12px 28px; font-family: 'Zen Maru Gothic', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 16px rgba(255,143,170,0.3); transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1); letter-spacing: 1px; }
+    .use-point-btn:active { transform: scale(0.95); }
+
+    /* ===== SECTION ===== */
+    .section { padding: 0 16px; margin-bottom: 20px; }
+    .section-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .section-title { font-size: 11px; font-family: 'DotGothic16', monospace; color: var(--text-muted); letter-spacing: 3px; white-space: nowrap; }
+    .section-line { flex: 1; height: 1px; background: var(--border); }
+
+    /* ===== BOTTOM NAV ===== */
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.92); backdrop-filter: blur(12px); border-top: 1px solid var(--border); display: flex; z-index: 40; max-width: 430px; margin: 0 auto; }
+    .nav-btn { flex: 1; padding: 10px 4px 14px; background: none; border: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; transition: all 0.2s; }
+    .nav-btn .nav-icon { font-size: 22px; }
+    .nav-btn .nav-label { font-size: 10px; font-family: 'DotGothic16', monospace; color: var(--text-muted); letter-spacing: 1px; }
+    .nav-btn.active .nav-label { color: var(--accent-dark); }
+    .nav-btn.active .nav-icon { filter: drop-shadow(0 0 4px rgba(124,156,255,0.5)); transform: scale(1.1); }
+
+    /* ===== MONTHLY GOAL ===== */
+    .monthly-goal-wrap { margin: 0 16px 18px; background: linear-gradient(145deg, #fff 0%, #f4f6ff 100%); border: 1px solid var(--border); border-left: 4px solid var(--accent2); border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow); }
+    .monthly-goal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .monthly-goal-label { font-size: 11px; font-family: 'DotGothic16', monospace; color: var(--accent2); letter-spacing: 2px; }
+    .monthly-goal-month { font-size: 11px; font-family: 'DotGothic16', monospace; color: var(--text-muted); letter-spacing: 1px; }
+    .monthly-goal-input { width: 100%; background: transparent; border: none; outline: none; font-family: 'Zen Maru Gothic', sans-serif; font-size: 14px; color: var(--text); resize: none; line-height: 1.6; }
+    .monthly-goal-input::placeholder { color: var(--text-muted); font-size: 13px; }
+
+    /* ===== LEGEND ===== */
+    .legend { display: flex; gap: 10px; margin-bottom: 14px; padding: 10px 14px; background: rgba(255,255,255,0.7); border-radius: 12px; border: 1px solid var(--border); flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; font-family: 'DotGothic16', monospace; color: var(--text-muted); letter-spacing: 1px; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+    .legend-dot.todo { background: rgba(124,156,255,0.5); }
+    .legend-dot.daily { background: var(--daily); opacity: 0.8; }
+    .legend-dot.weekly { background: var(--weekly); }
+    .legend-dot.spot { background: var(--spot); opacity: 0.8; }
+
+    /* ===== GROUP LABEL ===== */
+    .group-label { font-size: 10px; font-family: 'DotGothic16', monospace; letter-spacing: 2px; margin: 14px 0 6px; display: flex; align-items: center; gap: 6px; }
+    .group-label::after { content: ''; flex: 1; height: 1px; }
+    .group-label.g-todo { color: var(--accent-dark); }
+    .group-label.g-todo::after { background: rgba(124,156,255,0.2); }
+    .group-label.g-daily { color: #c97d00; }
+    .group-label.g-daily::after { background: rgba(255,179,71,0.25); }
+    .group-label.g-weekly { color: #2a8aaa; }
+    .group-label.g-weekly::after { background: rgba(126,200,227,0.3); }
+    .group-label.g-spot { color: #7a5abf; }
+    .group-label.g-spot::after { background: rgba(184,156,255,0.25); }
+
+    /* ===== TASK ITEM ===== */
+    .task-list { display: flex; flex-direction: column; gap: 9px; }
+    .task-item { background: var(--surface); border-left: 4px solid rgba(124,156,255,0.4); border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); border-radius: var(--radius); padding: 13px 14px; display: flex; align-items: center; gap: 11px; animation: slideIn 0.28s ease; box-shadow: var(--shadow); }
+    .task-item.daily-item { border-left-color: var(--daily); background: linear-gradient(to right, rgba(255,179,71,0.04) 0%, #fff 40%); }
+    .task-item.weekly-item { border-left-color: var(--weekly); background: linear-gradient(to right, rgba(126,200,227,0.06) 0%, #fff 40%); }
+    .task-item.spot-item { border-left-color: var(--spot); background: linear-gradient(to right, rgba(184,156,255,0.06) 0%, #fff 40%); }
+    .task-item.completed { opacity: 0.48; border-left-color: rgba(114,212,196,0.5) !important; background: #f8fffd !important; }
+    @keyframes slideIn { from{opacity:0;transform:translateY(7px)} to{opacity:1;transform:translateY(0)} }
+
+    .check-btn { width: 30px; height: 30px; border-radius: 50%; border: 2px solid rgba(124,156,255,0.3); background: transparent; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 13px; transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1); color: transparent; }
+    .daily-item .check-btn { border-color: rgba(255,179,71,0.5); }
+    .weekly-item .check-btn { border-color: rgba(126,200,227,0.6); }
+    .spot-item .check-btn { border-color: rgba(184,156,255,0.5); }
+    .task-item.completed .check-btn { background: rgba(114,212,196,0.2); border-color: var(--accent3); color: #3db8a4; }
+
+    .task-info { flex: 1; min-width: 0; }
+    .task-name { font-size: 15px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .task-item.completed .task-name { text-decoration: line-through; color: var(--text-muted); }
+
+    .task-point-badge { display: inline-flex; align-items: center; gap: 2px; border-radius: 20px; padding: 3px 9px; font-family: 'DotGothic16', monospace; font-size: 12px; flex-shrink: 0; background: var(--accent-soft); border: 1px solid rgba(124,156,255,0.28); color: var(--accent-dark); }
+    .daily-item .task-point-badge { background: var(--daily-soft); border-color: var(--daily-border); color: #b36d00; }
+    .weekly-item .task-point-badge { background: var(--weekly-soft); border-color: var(--weekly-border); color: #1e7a99; }
+    .spot-item .task-point-badge { background: var(--spot-soft); border-color: var(--spot-border); color: #7a5abf; }
+    .task-item.completed .task-point-badge { background: rgba(114,212,196,0.1); border-color: rgba(114,212,196,0.3); color: #3db8a4; }
+
+    .delete-btn { background: none; border: none; color: rgba(142,147,192,0.35); cursor: pointer; font-size: 15px; padding: 4px; flex-shrink: 0; transition: color 0.2s; }
+    .delete-btn:active { color: #ff8fa3; }
+
+    .empty-state { text-align: center; padding: 44px 20px; color: var(--text-muted); }
+    .empty-icon { font-size: 46px; margin-bottom: 12px; opacity: 0.35; }
+    .empty-text { font-size: 13px; font-family: 'DotGothic16', monospace; letter-spacing: 2px; }
+
+    /* ===== WEEKLY SCREEN ===== */
+    .week-nav { display: flex; align-items: center; justify-content: space-between; padding: 0 16px; margin-bottom: 16px; }
+    .week-nav-btn { width: 38px; height: 38px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); color: var(--accent-dark); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow); transition: all 0.2s; }
+    .week-nav-btn:active { transform: scale(0.92); background: var(--accent-soft); }
+    .week-label-wrap { text-align: center; }
+    .week-label { font-size: 16px; font-weight: 700; color: var(--text); }
+    .week-sub { font-size: 11px; font-family: 'DotGothic16', monospace; color: var(--text-muted); letter-spacing: 2px; margin-top: 2px; }
+    .week-today-btn { font-size: 11px; font-family: 'DotGothic16', monospace; background: var(--accent-soft); border: 1px solid rgba(124,156,255,0.3); color: var(--accent-dark); padding: 4px 10px; border-radius: 20px; cursor: pointer; margin-top: 4px; display: inline-block; letter-spacing: 1px; }
+
+    /* Calendar grid */
+    .calendar { margin: 0 16px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; overflow: hidden; box-shadow: var(--shadow); }
+    .cal-header { display: grid; grid-template-columns: repeat(7,1fr); background: var(--accent-soft); }
+    .cal-dow { text-align: center; padding: 8px 4px; font-size: 10px; font-family: 'DotGothic16', monospace; color: var(--text-muted); letter-spacing: 1px; }
+    .cal-dow:first-child { color: #ff8fa3; }
+    .cal-dow:last-child { color: var(--accent); }
+    .cal-body { display: grid; grid-template-columns: repeat(7,1fr); }
+    .cal-day { text-align: center; padding: 8px 2px; font-size: 13px; font-weight: 500; color: var(--text-muted); cursor: pointer; transition: all 0.15s; position: relative; }
+    .cal-day.this-month { color: var(--text); }
+    .cal-day.today { color: var(--accent-dark); font-weight: 900; }
+    .cal-day.today::after { content: ''; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; border-radius: 50%; background: var(--accent); }
+    .cal-day.selected-week { background: var(--accent-soft); }
+    .cal-day.selected-week:first-child, .cal-day.week-start { border-radius: 12px 0 0 12px; }
+    .cal-day.selected-week:last-child, .cal-day.week-end { border-radius: 0 12px 12px 0; }
+    .cal-day:active { background: rgba(124,156,255,0.2); }
+    .cal-month-nav { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px 8px; }
+    .cal-month-label { font-size: 14px; font-weight: 700; color: var(--text); }
+    .cal-month-btn { background: none; border: none; color: var(--accent-dark); font-size: 18px; cursor: pointer; padding: 4px 8px; }
+
+    /* Weekly quests */
+    .weekly-section { padding: 0 16px; margin-bottom: 16px; }
+    .weekly-section-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .weekly-section-label { font-size: 11px; font-family: 'DotGothic16', monospace; letter-spacing: 2px; }
+    .weekly-section-label.wl { color: #2a8aaa; }
+    .weekly-section-label.sp { color: #7a5abf; }
+    .add-spot-btn { font-size: 11px; font-family: 'DotGothic16', monospace; background: var(--spot-soft); border: 1px solid var(--spot-border); color: #7a5abf; padding: 5px 12px; border-radius: 20px; cursor: pointer; letter-spacing: 1px; transition: all 0.2s; }
+    .add-spot-btn:active { transform: scale(0.95); }
+
+    /* ===== FAB ===== */
+    .fab { position: fixed; bottom: 72px; right: 24px; width: 58px; height: 58px; border-radius: 50%; background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%); color: #fff; border: none; font-size: 30px; font-weight: 300; cursor: pointer; box-shadow: 0 6px 24px rgba(124,156,255,0.4); z-index: 38; display: flex; align-items: center; justify-content: center; transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s, opacity 0.2s; line-height: 1; }
+    .fab:active { transform: scale(0.92); }
+    .fab.open { transform: rotate(45deg); }
+    .fab.hidden { opacity: 0; pointer-events: none; }
+
+    /* ===== OVERLAY & MODAL ===== */
+    .overlay { position: fixed; inset: 0; background: rgba(100,110,180,0.22); backdrop-filter: blur(8px); z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+    .overlay.show { opacity: 1; pointer-events: all; }
+    .modal { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid var(--border); border-radius: 28px 28px 0 0; padding: 20px 20px 50px; z-index: 60; transform: translateY(100%); transition: transform 0.35s cubic-bezier(0.34,1.1,0.64,1); max-width: 430px; margin: 0 auto; box-shadow: 0 -8px 32px rgba(100,120,220,0.1); }
+    .modal.show { transform: translateY(0); }
+    .modal-handle { width: 40px; height: 4px; background: rgba(124,156,255,0.2); border-radius: 2px; margin: 0 auto 20px; }
+    .modal-title { font-size: 11px; font-family: 'DotGothic16', monospace; color: var(--text-muted); letter-spacing: 3px; margin-bottom: 16px; text-align: center; }
+
+    .input-task { background: var(--surface2); border: 1.5px solid var(--border); border-radius: 14px; padding: 14px 16px; color: var(--text); font-family: 'Zen Maru Gothic', sans-serif; font-size: 15px; width: 100%; outline: none; transition: border-color 0.2s, box-shadow 0.2s; margin-bottom: 14px; }
+    .input-task::placeholder { color: var(--text-muted); }
+    .input-task:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,156,255,0.12); }
+
+    .type-selector { display: flex; gap: 8px; margin-bottom: 14px; }
+    .type-btn { flex: 1; padding: 10px 4px; background: var(--surface2); border: 1.5px solid var(--border); border-radius: 12px; color: var(--text-muted); font-family: 'DotGothic16', monospace; font-size: 11px; cursor: pointer; transition: all 0.2s; text-align: center; }
+    .type-btn:active { transform: scale(0.95); }
+    .type-btn.sel-todo { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-dark); }
+    .type-btn.sel-daily { background: var(--daily-soft); border-color: var(--daily); color: #b36d00; }
+    .type-btn.sel-weekly { background: var(--weekly-soft); border-color: var(--weekly); color: #1e7a99; }
+    .type-btn.sel-spot { background: var(--spot-soft); border-color: var(--spot); color: #7a5abf; }
+
+    .point-templates { display: flex; gap: 8px; margin-bottom: 16px; }
+    .pt-btn { flex: 1; padding: 10px 4px; background: var(--surface2); border: 1.5px solid var(--border); border-radius: 12px; color: var(--text-muted); font-family: 'DotGothic16', monospace; font-size: 12px; cursor: pointer; transition: all 0.2s; text-align: center; }
+    .pt-btn:active { transform: scale(0.95); }
+    .pt-btn.selected { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-dark); }
+
+    .add-btn { background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%); color: #fff; border: none; border-radius: 14px; padding: 15px; font-family: 'Zen Maru Gothic', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; width: 100%; transition: all 0.2s; box-shadow: 0 4px 16px rgba(124,156,255,0.3); letter-spacing: 1px; }
+    .add-btn:active { transform: scale(0.97); }
+
+    /* Use modal */
+    .use-modal-icon { font-size: 40px; text-align: center; margin-bottom: 8px; }
+    .use-modal-current { text-align: center; font-size: 13px; color: var(--text-muted); font-family: 'DotGothic16', monospace; letter-spacing: 2px; margin-bottom: 4px; }
+    .use-modal-current span { color: var(--accent-dark); font-size: 20px; font-weight: 700; }
+    .use-input-wrap { position: relative; margin-bottom: 16px; }
+    .use-input-wrap .unit { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font-family: 'DotGothic16', monospace; font-size: 13px; color: var(--text-muted); pointer-events: none; }
+    .input-use-pt { background: var(--surface2); border: 1.5px solid rgba(255,143,170,0.35); border-radius: 14px; padding: 14px 48px 14px 16px; color: var(--text); font-family: 'Zen Maru Gothic', sans-serif; font-size: 22px; font-weight: 700; width: 100%; outline: none; transition: border-color 0.2s, box-shadow 0.2s; text-align: center; letter-spacing: 2px; }
+    .input-use-pt::placeholder { color: var(--text-muted); font-size: 16px; font-weight: 400; }
+    .input-use-pt:focus { border-color: var(--reward); box-shadow: 0 0 0 3px rgba(255,143,170,0.12); }
+    .use-btn { background: linear-gradient(135deg, #ffb3c6 0%, #ff8faa 100%); color: #fff; border: none; border-radius: 14px; padding: 15px; font-family: 'Zen Maru Gothic', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; width: 100%; transition: all 0.2s; box-shadow: 0 4px 16px rgba(255,143,170,0.3); letter-spacing: 1px; }
+    .use-btn:active { transform: scale(0.97); }
+    .use-error { font-size: 12px; color: #ff6b8a; font-family: 'DotGothic16', monospace; text-align: center; margin-bottom: 12px; min-height: 18px; letter-spacing: 1px; }
+
+    /* Freq selector */
+    .freq-label { font-size: 11px; font-family: 'DotGothic16', monospace; color: var(--text-muted); letter-spacing: 2px; margin-bottom: 8px; }
+    .freq-selector { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+    .freq-btn { padding: 8px 12px; background: var(--surface2); border: 1.5px solid var(--border); border-radius: 10px; color: var(--text-muted); font-family: 'DotGothic16', monospace; font-size: 12px; cursor: pointer; transition: all 0.2s; }
+    .freq-btn:active { transform: scale(0.95); }
+    .freq-btn.selected { background: var(--weekly-soft); border-color: var(--weekly); color: #1e7a99; }
+
+    /* Progress bar */
+    .progress-wrap { margin-top: 5px; display: flex; align-items: center; gap: 6px; }
+    .progress-bar-bg { flex: 1; height: 5px; background: rgba(126,200,227,0.2); border-radius: 3px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; background: linear-gradient(to right, var(--weekly), #a8e6f5); border-radius: 3px; transition: width 0.4s ease; }
+    .progress-text { font-size: 11px; font-family: 'DotGothic16', monospace; color: #1e7a99; white-space: nowrap; }
+
+    /* Toast */
+    .toast { position: fixed; top: 60px; left: 50%; transform: translateX(-50%) translateY(-20px); color: #fff; font-family: 'DotGothic16', monospace; font-size: 13px; font-weight: 700; padding: 10px 16px 10px 20px; border-radius: 30px; letter-spacing: 2px; opacity: 0; pointer-events: none; z-index: 100; transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1); display: flex; align-items: center; gap: 10px; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: all; }
+    .toast.type-earn { background: linear-gradient(135deg, var(--accent), var(--accent2)); box-shadow: 0 8px 24px rgba(124,156,255,0.35); }
+    .toast.type-use { background: linear-gradient(135deg, #ffb3c6, #ff8faa); box-shadow: 0 8px 24px rgba(255,143,170,0.35); }
+    .toast.type-err { background: linear-gradient(135deg, #ff8faa, #ff6b8a); box-shadow: 0 8px 24px rgba(255,107,138,0.35); }
+    .toast-msg { white-space: nowrap; }
+    .toast-undo { background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.4); color: #fff; font-family: 'DotGothic16', monospace; font-size: 11px; padding: 4px 10px; border-radius: 20px; cursor: pointer; white-space: nowrap; letter-spacing: 1px; transition: background 0.2s; flex-shrink: 0; }
+    .toast-undo:active { background: rgba(255,255,255,0.4); }
+
+    /* タスクアイテム全体タップ */
+    .task-item { cursor: pointer; }
+    .task-item.completed { cursor: default; }
+
+    /* Confetti */
+    .confetti-piece { position: fixed; width: 8px; height: 8px; pointer-events: none; z-index: 200; border-radius: 2px; animation: confettiFall 1s ease-out forwards; }
+    @keyframes confettiFall { 0%{transform:translateY(0) rotate(0deg);opacity:1} 100%{transform:translateY(200px) rotate(720deg);opacity:0} }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ===== SCREEN: HOME ===== -->
+  <div class="screen active" id="screenHome">
+    <div class="header">
+      <div class="header-title">QUEST LOG</div>
+      <h1>ポイントTODO ⭐</h1>
+    </div>
+
+    <div class="points-card">
+      <div class="points-label">TOTAL POINTS</div>
+      <div class="points-value" id="pointsDisplay">0</div>
+      <div class="points-unit">ポイント</div>
+      <button class="use-point-btn" onclick="openUseModal()">🎁 ポイントを使う</button>
+    </div>
+
+    <div class="monthly-goal-wrap" id="monthlyGoalWrap">
+      <div class="monthly-goal-header">
+        <div class="monthly-goal-label">🎯 今月の目標</div>
+        <div class="monthly-goal-month" id="monthlyGoalMonth"></div>
+      </div>
+      <textarea class="monthly-goal-input" id="monthlyGoalInput" placeholder="今月達成したいことを入力…" maxlength="100" rows="2" oninput="saveMonthlyGoal()"></textarea>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">クエスト一覧</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="task-list" id="taskList"></div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: WEEKLY ===== -->
+  <div class="screen" id="screenWeekly">
+    <div class="header">
+      <div class="header-title">WEEKLY</div>
+      <h1>週間クエスト 📅</h1>
+    </div>
+
+    <!-- Month nav -->
+    <div class="calendar">
+      <div class="cal-month-nav">
+        <button class="cal-month-btn" onclick="prevMonth()">‹</button>
+        <div class="cal-month-label" id="calMonthLabel"></div>
+        <button class="cal-month-btn" onclick="nextMonth()">›</button>
+      </div>
+      <div class="cal-header">
+        <div class="cal-dow">日</div><div class="cal-dow">月</div><div class="cal-dow">火</div>
+        <div class="cal-dow">水</div><div class="cal-dow">木</div><div class="cal-dow">金</div>
+        <div class="cal-dow">土</div>
+      </div>
+      <div class="cal-body" id="calBody"></div>
+    </div>
+
+    <!-- Selected week info -->
+    <div class="week-nav">
+      <button class="week-nav-btn" onclick="prevWeek()">‹</button>
+      <div class="week-label-wrap">
+        <div class="week-label" id="weekLabel"></div>
+        <div class="week-sub" id="weekSub"></div>
+        <div class="week-today-btn" onclick="goToday()" id="todayBtn">今週に戻る</div>
+      </div>
+      <button class="week-nav-btn" onclick="nextWeek()">›</button>
+    </div>
+
+    <!-- Weekly quests (定番) -->
+    <div class="weekly-section">
+      <div class="weekly-section-title">
+        <div class="weekly-section-label wl">📅 WEEKLY</div>
+        <button class="add-spot-btn" style="background:var(--weekly-soft);border-color:var(--weekly-border);color:#1e7a99" onclick="openWeeklyModal()">＋ 追加</button>
+      </div>
+      <div class="task-list" id="weeklyRegularList"></div>
+    </div>
+
+    <!-- Spot quests (その週だけ) -->
+    <div class="weekly-section">
+      <div class="weekly-section-title">
+        <div class="weekly-section-label sp">✨ この週のスポットクエスト</div>
+        <button class="add-spot-btn" onclick="openSpotModal()">＋ 追加</button>
+      </div>
+      <div class="task-list" id="weeklySpotList"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Bottom nav -->
+<div class="bottom-nav">
+  <button class="nav-btn active" id="navHome" onclick="switchScreen('home')">
+    <div class="nav-icon">🏠</div>
+    <div class="nav-label">ホーム</div>
+  </button>
+  <button class="nav-btn" id="navWeekly" onclick="switchScreen('weekly')">
+    <div class="nav-icon">📅</div>
+    <div class="nav-label">週間クエスト</div>
+  </button>
+</div>
+
+<!-- FAB -->
+<button class="fab" id="fab" onclick="toggleAddModal()">＋</button>
+
+<!-- Overlay -->
+<div class="overlay" id="overlay" onclick="closeAllModals()"></div>
+
+<!-- タスク追加モーダル -->
+<div class="modal" id="addModal">
+  <div class="modal-handle"></div>
+  <div class="modal-title">新しいクエストを追加</div>
+  <input class="input-task" id="taskInput" type="text" placeholder="タスクを入力してください..." maxlength="40">
+  <div class="type-selector" id="typeSelector">
+    <button class="type-btn sel-todo" data-type="todo" onclick="selectType('todo')">📋 TODO</button>
+    <button class="type-btn" data-type="daily" onclick="selectType('daily')">🌅 DAILY</button>
+  </div>
+  <div class="point-templates" id="ptButtons">
+    <button class="pt-btn" data-pt="50">★50</button>
+    <button class="pt-btn selected" data-pt="100">★100</button>
+    <button class="pt-btn" data-pt="200">★200</button>
+  </div>
+  <button class="add-btn" onclick="addTask()">＋ クエストを追加</button>
+</div>
+
+<!-- ウィークリークエスト追加モーダル -->
+<div class="modal" id="weeklyModal">
+  <div class="modal-handle"></div>
+  <div class="modal-title">📅 WEEKLY クエストを追加</div>
+  <input class="input-task" id="weeklyInput" type="text" placeholder="毎週のクエストを入力..." maxlength="40">
+  <div class="freq-label">週に何回達成で完了？</div>
+  <div class="freq-selector" id="freqButtons">
+    <button class="freq-btn selected" data-freq="1">1回</button>
+    <button class="freq-btn" data-freq="2">2回</button>
+    <button class="freq-btn" data-freq="3">3回</button>
+    <button class="freq-btn" data-freq="4">4回</button>
+    <button class="freq-btn" data-freq="5">5回</button>
+    <button class="freq-btn" data-freq="7">毎日</button>
+  </div>
+  <div class="point-templates" id="weeklyPtButtons">
+    <button class="pt-btn selected" data-pt="100">★100</button>
+    <button class="pt-btn" data-pt="200">★200</button>
+    <button class="pt-btn" data-pt="500">★500</button>
+  </div>
+  <button class="add-btn" style="background:linear-gradient(135deg,#a8e6f5,#7ec8e3);box-shadow:0 4px 16px rgba(126,200,227,0.3)" onclick="addWeeklyTask()">📅 WEEKLY クエストを追加</button>
+</div>
+
+<!-- スポットクエスト追加モーダル -->
+<div class="modal" id="spotModal">
+  <div class="modal-handle"></div>
+  <div class="modal-title">✨ スポットクエストを追加</div>
+  <input class="input-task" id="spotInput" type="text" placeholder="この週だけのクエスト..." maxlength="40">
+  <div class="point-templates" id="spotPtButtons">
+    <button class="pt-btn" data-pt="50">★50</button>
+    <button class="pt-btn selected" data-pt="100">★100</button>
+    <button class="pt-btn" data-pt="200">★200</button>
+  </div>
+  <button class="add-btn" style="background:linear-gradient(135deg,#c9a8ff,#b89cff);box-shadow:0 4px 16px rgba(184,156,255,0.3)" onclick="addSpotTask()">✨ スポットクエストを追加</button>
+</div>
+
+<!-- ポイント使用モーダル -->
+<div class="modal" id="useModal">
+  <div class="modal-handle"></div>
+  <div class="use-modal-icon">🎁</div>
+  <div class="modal-title">ポイントを使う</div>
+  <div class="use-modal-current">現在の残高：<span id="useModalBalance">0</span> pt</div>
+  <br>
+  <div class="use-input-wrap">
+    <input class="input-use-pt" id="useInput" type="number" min="1" placeholder="使うポイントを入力" inputmode="numeric">
+    <span class="unit">pt</span>
+  </div>
+  <div class="use-error" id="useError"></div>
+  <button class="use-btn" onclick="usePoints()">🎁 ご褒美と交換する</button>
+</div>
+
+<div class="toast" id="toast">
+  <span class="toast-msg" id="toastMsg"></span>
+  <button class="toast-undo" id="toastUndo" onclick="undoLast()" style="display:none">↩ やり直し</button>
+</div>
+
+<script>
+  // ===== STATE =====
+  let tasks = JSON.parse(localStorage.getItem('ptTasks') || '[]');
+  let bonusPoints = parseInt(localStorage.getItem('bonusPoints') || '0');
+  // earnedPoints: 累積獲得ポイント（削除しても減らない）
+  let earnedPoints = parseInt(localStorage.getItem('earnedPoints') || '-1');
+  // spotTasks: { weekKey: [{id, name, pt, done}] }
+  let spotTasks = JSON.parse(localStorage.getItem('spotTasks') || '{}');
+  // weekCounts: { weekKey: { taskId: count } } - 週複数回クエストのカウント
+  let weekCounts = JSON.parse(localStorage.getItem('weekCounts') || '{}');
+  // lastAction: やり直し用に直前の操作を1件記憶
+  let lastAction = null;
+
+  let selectedPt = 100;
+  let selectedSpotPt = 100;
+  let selectedType = 'todo';
+  let activeModal = null;
+  let currentScreen = 'home';
+
+  // Calendar state
+  let calViewDate = new Date();  // month being viewed
+  let selectedWeekMonday = getMonday(new Date()); // currently selected week
+
+  // ===== HELPERS =====
+  function getMonday(d) {
+    const day = d.getDay(), diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    const m = new Date(d); m.setDate(diff); m.setHours(0,0,0,0); return m;
+  }
+  function weekKey(monday) {
+    return monday.toISOString().slice(0,10);
+  }
+  function todayStr() { return new Date().toISOString().slice(0,10); }
+  function thisWeekKey() { return weekKey(getMonday(new Date())); }
+  function fmt(d) { return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`; }
+
+  // ===== RESET =====
+  function checkAndReset() {
+    const today = todayStr(), thisWeek = thisWeekKey();
+    if (localStorage.getItem('lastDailyReset') !== today) {
+      // todo・dailyの完了済みを削除、dailyの未完了をリセット
+      tasks = tasks.filter(t => !(t.done && (t.type === 'todo' || t.type === 'daily')));
+      tasks.forEach(t => { if (t.type === 'daily') t.done = false; });
+      // 今週のスポット完了済みも削除
+      const wk = thisWeekKey();
+      if (spotTasks[wk]) spotTasks[wk] = spotTasks[wk].filter(t => !t.done);
+      localStorage.setItem('lastDailyReset', today);
+    }
+    if (localStorage.getItem('lastWeeklyReset') !== thisWeek) {
+      // weeklyの完了済みを削除、未完了をリセット
+      tasks = tasks.filter(t => !(t.done && t.type === 'weekly'));
+      tasks.forEach(t => { if (t.type === 'weekly') t.done = false; });
+      if (weekCounts[thisWeek]) delete weekCounts[thisWeek];
+      localStorage.setItem('lastWeeklyReset', thisWeek);
+    }
+    save();
+  }
+
+  // ===== SAVE =====
+  function save() {
+    localStorage.setItem('ptTasks', JSON.stringify(tasks));
+    localStorage.setItem('bonusPoints', bonusPoints.toString());
+    localStorage.setItem('earnedPoints', earnedPoints.toString());
+    localStorage.setItem('spotTasks', JSON.stringify(spotTasks));
+    localStorage.setItem('weekCounts', JSON.stringify(weekCounts));
+  }
+
+  // ===== SCREEN =====
+  function switchScreen(screen) {
+    currentScreen = screen;
+    document.getElementById('screenHome').classList.toggle('active', screen === 'home');
+    document.getElementById('screenWeekly').classList.toggle('active', screen === 'weekly');
+    document.getElementById('navHome').classList.toggle('active', screen === 'home');
+    document.getElementById('navWeekly').classList.toggle('active', screen === 'weekly');
+    document.getElementById('fab').classList.toggle('hidden', screen === 'weekly');
+    if (screen === 'weekly') renderWeekly();
+    if (screen === 'home') renderHome();
+  }
+
+  // ===== TYPE SELECTOR =====
+  document.getElementById('ptButtons').addEventListener('click', e => {
+    const btn = e.target.closest('.pt-btn'); if (!btn) return;
+    document.querySelectorAll('#ptButtons .pt-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected'); selectedPt = parseInt(btn.dataset.pt);
+  });
+  document.getElementById('spotPtButtons').addEventListener('click', e => {
+    const btn = e.target.closest('.pt-btn'); if (!btn) return;
+    document.querySelectorAll('#spotPtButtons .pt-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected'); selectedSpotPt = parseInt(btn.dataset.pt);
+  });
+  let selectedWeeklyPt = 100;
+  let selectedFreq = 1;
+  document.getElementById('weeklyPtButtons').addEventListener('click', e => {
+    const btn = e.target.closest('.pt-btn'); if (!btn) return;
+    document.querySelectorAll('#weeklyPtButtons .pt-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected'); selectedWeeklyPt = parseInt(btn.dataset.pt);
+  });
+  document.getElementById('freqButtons').addEventListener('click', e => {
+    const btn = e.target.closest('.freq-btn'); if (!btn) return;
+    document.querySelectorAll('.freq-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected'); selectedFreq = parseInt(btn.dataset.freq);
+  });
+  function selectType(type) {
+    selectedType = type;
+    document.querySelectorAll('.type-btn').forEach(b => b.className = 'type-btn');
+    document.querySelector(`.type-btn[data-type="${type}"]`).classList.add(`sel-${type}`);
+  }
+
+  // ===== MODALS =====
+  function toggleAddModal() { activeModal === 'add' ? closeAllModals() : openAddModal(); }
+  function openAddModal() {
+    activeModal = 'add'; selectType('todo');
+    document.getElementById('addModal').classList.add('show');
+    document.getElementById('overlay').classList.add('show');
+    document.getElementById('fab').classList.add('open');
+    setTimeout(() => document.getElementById('taskInput').focus(), 350);
+  }
+  function openWeeklyModal() {
+    activeModal = 'weekly';
+    document.getElementById('weeklyModal').classList.add('show');
+    document.getElementById('overlay').classList.add('show');
+    setTimeout(() => document.getElementById('weeklyInput').focus(), 350);
+  }
+  function openSpotModal() {
+    activeModal = 'spot';
+    document.getElementById('spotModal').classList.add('show');
+    document.getElementById('overlay').classList.add('show');
+    setTimeout(() => document.getElementById('spotInput').focus(), 350);
+  }
+  function openUseModal() {
+    activeModal = 'use';
+    document.getElementById('useModal').classList.add('show');
+    document.getElementById('overlay').classList.add('show');
+    document.getElementById('useModalBalance').textContent = getTotalPoints();
+    document.getElementById('useInput').value = '';
+    document.getElementById('useError').textContent = '';
+    setTimeout(() => document.getElementById('useInput').focus(), 350);
+  }
+  function closeAllModals() {
+    activeModal = null;
+    ['addModal','spotModal','useModal','weeklyModal'].forEach(id => document.getElementById(id).classList.remove('show'));
+    document.getElementById('overlay').classList.remove('show');
+    document.getElementById('fab').classList.remove('open');
+  }
+
+  // ===== ADD TASK =====
+  function addTask() {
+    const input = document.getElementById('taskInput');
+    const name = input.value.trim();
+    if (!name) { showToast('タスク名を入力してください', 'err'); return; }
+    tasks.push({ id: Date.now(), name, pt: selectedPt, type: selectedType, done: false });
+    save(); input.value = ''; closeAllModals(); subTab = 'pending';
+    renderHome(); showToast('クエスト追加！', 'earn');
+  }
+  document.getElementById('taskInput').addEventListener('keydown', e => { if (e.key==='Enter') addTask(); });
+
+  // ===== ADD WEEKLY TASK =====
+  function addWeeklyTask() {
+    const input = document.getElementById('weeklyInput');
+    const name = input.value.trim();
+    if (!name) { showToast('タスク名を入力してください', 'err'); return; }
+    // freq: 目標回数, count: 今週の達成回数 (週ごとにweekCountsで管理)
+    tasks.push({ id: Date.now(), name, pt: selectedWeeklyPt, type: 'weekly', done: false, freq: selectedFreq });
+    save(); input.value = '';
+    // freqボタンをリセット
+    document.querySelectorAll('.freq-btn').forEach(b => b.classList.remove('selected'));
+    document.querySelector('.freq-btn[data-freq="1"]').classList.add('selected');
+    selectedFreq = 1;
+    closeAllModals();
+    renderWeekly(); showToast('ウィークリークエスト追加！', 'earn');
+  }
+  document.getElementById('weeklyInput').addEventListener('keydown', e => { if (e.key==='Enter') addWeeklyTask(); });
+
+  // ===== ADD SPOT TASK =====
+  function addSpotTask() {
+    const input = document.getElementById('spotInput');
+    const name = input.value.trim();
+    if (!name) { showToast('タスク名を入力してください', 'err'); return; }
+    const key = weekKey(selectedWeekMonday);
+    if (!spotTasks[key]) spotTasks[key] = [];
+    spotTasks[key].push({ id: Date.now(), name, pt: selectedSpotPt, done: false });
+    save(); input.value = ''; closeAllModals();
+    renderWeekly(); showToast('スポットクエスト追加！', 'earn');
+  }
+  document.getElementById('spotInput').addEventListener('keydown', e => { if (e.key==='Enter') addSpotTask(); });
+
+  // ===== COMPLETE =====
+  function completeTask(id) {
+    const t = tasks.find(t => t.id === id); if (!t || t.done) return;
+    lastAction = { type: 'complete-task', id, prevDone: false, pt: t.pt };
+    t.done = true; earnedPoints += t.pt; save(); renderHome(); animatePoints('pop'); spawnConfetti();
+    showToast(`+${t.pt}pt ゲット！`, 'earn', true);
+  }
+  function completeSpot(id) {
+    const key = thisWeekKey();
+    if (!spotTasks[key]) spotTasks[key] = [];
+    const t = spotTasks[key].find(t => t.id === id); if (!t || t.done) return;
+    lastAction = { type: 'complete-spot', id, wKey: key, prevDone: false, pt: t.pt };
+    t.done = true; earnedPoints += t.pt; save();
+    if (currentScreen === 'weekly') renderWeekly(); else renderHome();
+    animatePoints('pop'); spawnConfetti();
+    showToast(`+${t.pt}pt ゲット！`, 'earn', true);
+  }
+  function completeWeekly(id) {
+    const t = tasks.find(t => t.id === id); if (!t) return;
+    const freq = t.freq || 1;
+    const wk = thisWeekKey();
+    if (!weekCounts[wk]) weekCounts[wk] = {};
+    const cur = weekCounts[wk][id] || 0;
+    if (cur >= freq) return;
+    lastAction = { type: 'complete-weekly', id, wk, prevCount: cur, prevDone: t.done };
+    weekCounts[wk][id] = cur + 1;
+    const newCount = weekCounts[wk][id];
+    if (newCount >= freq) {
+      t.done = true; earnedPoints += t.pt;
+      lastAction.pt = t.pt;
+      save();
+      if (currentScreen === 'weekly') renderWeekly(); else renderHome();
+      animatePoints('pop'); spawnConfetti();
+      showToast(`+${t.pt}pt ゲット！`, 'earn', true);
+    } else {
+      save();
+      if (currentScreen === 'weekly') renderWeekly(); else renderHome();
+      showToast(`${newCount}/${freq}回 達成！`, 'earn', true);
+    }
+  }
+
+  // ===== UNDO =====
+  function undoLast() {
+    if (!lastAction) return;
+    const a = lastAction; lastAction = null;
+    clearTimeout(toastTimer);
+    document.getElementById('toast').classList.remove('show');
+    if (a.type === 'complete-task') {
+      const t = tasks.find(t => t.id === a.id); if (t) t.done = a.prevDone;
+      earnedPoints -= a.pt;
+      save(); renderHome();
+    } else if (a.type === 'complete-spot') {
+      const arr = spotTasks[a.wKey] || [];
+      const t = arr.find(t => t.id === a.id); if (t) t.done = a.prevDone;
+      earnedPoints -= a.pt;
+      save(); if (currentScreen === 'weekly') renderWeekly(); else renderHome();
+    } else if (a.type === 'complete-weekly') {
+      const t = tasks.find(t => t.id === a.id); if (t) t.done = a.prevDone;
+      if (weekCounts[a.wk]) weekCounts[a.wk][a.id] = a.prevCount;
+      if (a.pt) earnedPoints -= a.pt;
+      save(); if (currentScreen === 'weekly') renderWeekly(); else renderHome();
+    }
+    showToast('やり直しました', 'use', false);
+  }
+
+  // ===== DELETE =====
+  function deleteTask(id) { tasks = tasks.filter(t => t.id !== id); save(); renderHome(); }
+  function deleteSpot(id) {
+    const key = thisWeekKey();
+    if (spotTasks[key]) spotTasks[key] = spotTasks[key].filter(t => t.id !== id);
+    save();
+    if (currentScreen === 'weekly') renderWeekly(); else renderHome();
+  }
+  function deleteFutureSpot(key, id) {
+    if (spotTasks[key]) spotTasks[key] = spotTasks[key].filter(t => t.id !== id);
+    save(); renderHome();
+  }
+  function deleteWeekly(id) {
+    tasks = tasks.filter(t => t.id !== id); save();
+    if (currentScreen === 'weekly') renderWeekly(); else renderHome();
+  }
+
+  // ===== USE POINTS =====
+  function usePoints() {
+    const val = parseInt(document.getElementById('useInput').value);
+    const cur = getTotalPoints();
+    const err = document.getElementById('useError');
+    if (!val || val <= 0) { err.textContent = '使うポイント数を入力してください'; return; }
+    if (val > cur) { err.textContent = `ポイントが足りません（残高 ${cur}pt）`; return; }
+    bonusPoints += val; save(); closeAllModals(); renderHome();
+    animatePoints('shrink'); showToast(`${val}pt 使いました！`, 'use');
+  }
+  document.getElementById('useInput').addEventListener('keydown', e => { if (e.key==='Enter') usePoints(); });
+
+  // ===== POINTS =====
+  // 初回起動時（旧データ）は既存doneタスクからearnedPointsをマイグレーション
+  if (earnedPoints === -1) {
+    const taskPts = tasks.filter(t => t.done).reduce((s,t) => s+t.pt, 0);
+    const spotPts = Object.values(spotTasks).flat().filter(t => t.done).reduce((s,t) => s+t.pt, 0);
+    earnedPoints = taskPts + spotPts;
+  }
+  function getTotalPoints() { return Math.max(0, earnedPoints - bonusPoints); }
+  function animatePoints(type) {
+    const el = document.getElementById('pointsDisplay');
+    el.classList.remove('pop','shrink'); void el.offsetWidth; el.classList.add(type);
+  }
+
+  // ===== CALENDAR =====
+  function prevMonth() { calViewDate.setMonth(calViewDate.getMonth()-1); renderCalendar(); }
+  function nextMonth() { calViewDate.setMonth(calViewDate.getMonth()+1); renderCalendar(); }
+  function prevWeek() { selectedWeekMonday = new Date(selectedWeekMonday.getTime() - 7*86400000); calViewDate = new Date(selectedWeekMonday); renderWeekly(); }
+  function nextWeek() { selectedWeekMonday = new Date(selectedWeekMonday.getTime() + 7*86400000); calViewDate = new Date(selectedWeekMonday); renderWeekly(); }
+  function goToday() { selectedWeekMonday = getMonday(new Date()); calViewDate = new Date(); renderWeekly(); }
+
+  function selectWeekByDay(dateStr) {
+    const d = new Date(dateStr + 'T00:00:00');
+    selectedWeekMonday = getMonday(d);
+    renderWeekly();
+  }
+
+  function renderCalendar() {
+    const y = calViewDate.getFullYear(), m = calViewDate.getMonth();
+    document.getElementById('calMonthLabel').textContent = `${y}年${m+1}月`;
+
+    const first = new Date(y, m, 1);
+    const last = new Date(y, m+1, 0);
+    const startDow = first.getDay(); // 0=Sun
+    const today = new Date(); today.setHours(0,0,0,0);
+    const selKey = weekKey(selectedWeekMonday);
+
+    let cells = '';
+    // Leading blanks
+    for (let i = 0; i < startDow; i++) {
+      const prevDate = new Date(y, m, 1 - (startDow - i));
+      cells += `<div class="cal-day" onclick="selectWeekByDay('${prevDate.toISOString().slice(0,10)}')">${prevDate.getDate()}</div>`;
+    }
+    for (let d = 1; d <= last.getDate(); d++) {
+      const date = new Date(y, m, d);
+      const dateStr = date.toISOString().slice(0,10);
+      const mon = getMonday(date);
+      const isSelectedWeek = weekKey(mon) === selKey;
+      const isToday = date.getTime() === today.getTime();
+      const dow = date.getDay();
+      let cls = 'cal-day this-month';
+      if (isSelectedWeek) cls += ' selected-week';
+      if (isToday) cls += ' today';
+      if (isSelectedWeek && dow === 1) cls += ' week-start';
+      if (isSelectedWeek && dow === 0) cls += ' week-end';
+      cells += `<div class="${cls}" onclick="selectWeekByDay('${dateStr}')">${d}</div>`;
+    }
+    // Trailing
+    const trailing = 42 - startDow - last.getDate();
+    for (let i = 1; i <= trailing; i++) {
+      const nextDate = new Date(y, m+1, i);
+      cells += `<div class="cal-day" onclick="selectWeekByDay('${nextDate.toISOString().slice(0,10)}')">${nextDate.getDate()}</div>`;
+    }
+    document.getElementById('calBody').innerHTML = cells;
+  }
+
+  // ===== RENDER HOME =====
+  function renderHome() {
+    document.getElementById('pointsDisplay').textContent = getTotalPoints();
+
+    const list = document.getElementById('taskList');
+    const order = ['todo','daily','weekly'];
+    const labels = {
+      todo:   {cls:'g-todo',   icon:'📋', text:'TODO'},
+      daily:  {cls:'g-daily',  icon:'🌅', text:'DAILY'},
+      weekly: {cls:'g-weekly', icon:'📅', text:'WEEKLY'},
+    };
+
+    // 未完了グループ
+    const pendingGroups = {};
+    order.forEach(type => { pendingGroups[type] = tasks.filter(t => t.type===type && !t.done); });
+    const pendingSpots = (spotTasks[thisWeekKey()] || []).filter(t => !t.done);
+
+    // 完了済みグループ
+    const doneGroups = {};
+    order.forEach(type => { doneGroups[type] = tasks.filter(t => t.type===type && t.done); });
+    const doneSpots = (spotTasks[thisWeekKey()] || []).filter(t => t.done);
+
+    // 来週以降のスポットクエスト（未完了のみ、週キー順にソート）
+    const futureSpots = [];
+    const twk = thisWeekKey();
+    Object.keys(spotTasks).sort().forEach(key => {
+      if (key <= twk) return; // 今週以前はスキップ
+      (spotTasks[key] || []).filter(t => !t.done).forEach(t => {
+        futureSpots.push({ ...t, _weekKey: key });
+      });
+    });
+    const hasFuture = futureSpots.length > 0;
+
+    const hasPending = order.some(type => pendingGroups[type].length) || pendingSpots.length;
+    const hasDone    = order.some(type => doneGroups[type].length) || doneSpots.length;
+
+    if (!hasPending && !hasDone && !hasFuture) {
+      list.innerHTML = `<div class="empty-state"><div class="empty-icon">🎯</div><div class="empty-text">クエストを追加しよう！</div></div>`;
+      return;
+    }
+
+    let html = '';
+
+    // ── 未完了 ──
+    if (hasPending) {
+      order.forEach(type => {
+        if (!pendingGroups[type].length) return;
+        const lb = labels[type];
+        html += `<div class="group-label ${lb.cls}">${lb.icon} ${lb.text}</div>`;
+        pendingGroups[type].forEach(t => {
+          const completeFn = type === 'weekly' ? 'completeWeekly' : 'completeTask';
+          const deleteFn   = type === 'weekly' ? 'deleteWeekly'   : 'deleteTask';
+          html += taskHTML(t, type, completeFn, deleteFn);
+        });
+      });
+      if (pendingSpots.length) {
+        html += `<div class="group-label g-spot">✨ 今週のスポット</div>`;
+        pendingSpots.forEach(t => { html += spotTaskHTML(t, 'completeSpot', 'deleteSpot'); });
+      }
+    }
+
+    // ── 来週以降のスポット ──
+    if (hasFuture) {
+      const topMargin = hasPending ? '20px' : '14px';
+      html += `<div class="group-label g-spot" style="margin-top:${topMargin};opacity:0.5">📅 来週以降のスポット<span style="flex:1;height:1px;background:rgba(184,156,255,0.2);display:inline-block;margin-left:8px;vertical-align:middle"></span></div>`;
+      futureSpots.forEach(t => {
+        html += `<div class="task-item spot-item" style="opacity:0.4;cursor:default">
+          <div class="check-btn" style="opacity:0.3">✓</div>
+          <div class="task-info"><div class="task-name">${escHtml(t.name)}</div><div style="font-size:10px;font-family:'DotGothic16',monospace;color:var(--text-muted);margin-top:2px;letter-spacing:1px">${t._weekKey} 〜</div></div>
+          <div class="task-point-badge">★ ${t.pt}pt</div>
+          <button class="delete-btn" onclick="event.stopPropagation();deleteFutureSpot('${t._weekKey}',${t.id})">✕</button>
+        </div>`;
+      });
+    }
+
+    // ── 完了済み ──
+    if (hasDone) {
+      html += `<div class="group-label" style="color:var(--accent3);margin-top:${hasPending?'20px':'14px'}">✓ 完了済み<span style="flex:1;height:1px;background:rgba(114,212,196,0.25);display:inline-block;margin-left:8px;vertical-align:middle"></span></div>`;
+      order.forEach(type => {
+        if (!doneGroups[type].length) return;
+        doneGroups[type].forEach(t => {
+          const deleteFn = type === 'weekly' ? 'deleteWeekly' : 'deleteTask';
+          html += taskHTML(t, type, 'noop', deleteFn);
+        });
+      });
+      doneSpots.forEach(t => { html += spotTaskHTML(t, 'noop', 'deleteSpot'); });
+    }
+
+    list.innerHTML = html;
+  }
+
+  // ===== RENDER WEEKLY =====
+  function renderWeekly() {
+    document.getElementById('pointsDisplay').textContent = getTotalPoints();
+
+    const key = weekKey(selectedWeekMonday);
+    const sunday = new Date(selectedWeekMonday.getTime() + 6*86400000);
+    document.getElementById('weekLabel').textContent = `${fmt(selectedWeekMonday)} 〜 ${fmt(sunday)}`;
+
+    const isThisWeek = key === thisWeekKey();
+    document.getElementById('todayBtn').style.display = isThisWeek ? 'none' : 'inline-block';
+
+    const wSub = isThisWeek ? '今週' : (key < thisWeekKey() ? '過去の週' : '未来の週');
+    document.getElementById('weekSub').textContent = wSub;
+
+    renderCalendar();
+
+    // Regular weekly tasks
+    const regulars = tasks.filter(t => t.type === 'weekly');
+    const rList = document.getElementById('weeklyRegularList');
+    if (!regulars.length) {
+      rList.innerHTML = `<div class="empty-state" style="padding:20px"><div class="empty-text">WEEKLY クエストを追加しよう</div></div>`;
+    } else {
+      rList.innerHTML = regulars.map(t => {
+        // 今週以外はdone・カウントをゼロにして表示、チェック不可
+        const display = isThisWeek ? t : { ...t, done: false, _forceCount: 0 };
+        return taskHTML(display, 'weekly', 'noop', 'deleteWeekly');
+      }).join('');
+    }
+
+    // Spot tasks for selected week
+    const spots = spotTasks[key] || [];
+    const sList = document.getElementById('weeklySpotList');
+    if (!spots.length) {
+      sList.innerHTML = `<div class="empty-state" style="padding:20px"><div class="empty-text">この週のスポットクエストはまだありません</div></div>`;
+    } else {
+      sList.innerHTML = spots.map(t => {
+        // 今週以外はdoneをゼロにして表示、チェック不可
+        const display = isThisWeek ? t : { ...t, done: false };
+        return spotTaskHTML(display, 'noop', 'deleteSpot');
+      }).join('');
+    }
+  }
+
+  function noop() {}
+
+  function taskHTML(t, type, completeFn, deleteFn) {
+    let progressHTML = '';
+    if (type === 'weekly' && (t.freq || 1) > 1) {
+      const wk = thisWeekKey();
+      const count = t._forceCount !== undefined ? t._forceCount : ((weekCounts[wk] && weekCounts[wk][t.id]) || 0);
+      const freq = t.freq || 1;
+      const pct = Math.min(100, Math.round(count / freq * 100));
+      progressHTML = `
+        <div class="progress-wrap">
+          <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+          <div class="progress-text">${count}/${freq}回</div>
+        </div>`;
+    }
+    const isNoop = completeFn === 'noop';
+    const tapHandler = (!t.done && !isNoop) ? `onclick="${completeFn}(${t.id})"` : '';
+    return `<div class="task-item ${t.done?'completed':''} ${type}-item" ${tapHandler}>
+      <div class="check-btn" style="${isNoop ? 'opacity:0.3' : ''}${t.done ? ';background:rgba(114,212,196,0.2);border-color:var(--accent3);color:#3db8a4' : ''}">✓</div>
+      <div class="task-info">
+        <div class="task-name">${escHtml(t.name)}</div>
+        ${progressHTML}
+      </div>
+      <div class="task-point-badge">★ ${t.pt}pt</div>
+      <button class="delete-btn" onclick="event.stopPropagation();${deleteFn}(${t.id})">✕</button>
+    </div>`;
+  }
+  function spotTaskHTML(t, completeFn, deleteFn) {
+    const isNoop = completeFn === 'noop';
+    const tapHandler = (!t.done && !isNoop) ? `onclick="${completeFn}(${t.id})"` : '';
+    return `<div class="task-item ${t.done?'completed':''} spot-item" ${tapHandler}>
+      <div class="check-btn" style="${isNoop ? 'opacity:0.3' : ''}${t.done ? ';background:rgba(114,212,196,0.2);border-color:var(--accent3);color:#3db8a4' : ''}">✓</div>
+      <div class="task-info"><div class="task-name">${escHtml(t.name)}</div></div>
+      <div class="task-point-badge">★ ${t.pt}pt</div>
+      <button class="delete-btn" onclick="event.stopPropagation();${deleteFn}(${t.id})">✕</button>
+    </div>`;
+  }
+
+  function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  let toastTimer = null;
+  function showToast(msg, type='earn', showUndo=false) {
+    document.getElementById('toastMsg').textContent = msg;
+    document.getElementById('toastUndo').style.display = showUndo ? 'inline-block' : 'none';
+    const t = document.getElementById('toast');
+    t.className = `toast type-${type} show`;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      t.classList.remove('show');
+      if (!showUndo) lastAction = null;
+    }, 2800);
+  }
+
+  function spawnConfetti() {
+    const colors = ['#7c9cff','#b89cff','#72d4c4','#ffd6e8','#a8d8ff'];
+    for (let i = 0; i < 18; i++) {
+      const el = document.createElement('div');
+      el.className = 'confetti-piece';
+      el.style.cssText = `left:${30+Math.random()*40}%;top:${20+Math.random()*20}%;background:${colors[Math.floor(Math.random()*colors.length)]};animation-delay:${Math.random()*0.3}s;animation-duration:${0.8+Math.random()*0.5}s;transform:rotate(${Math.random()*360}deg);`;
+      document.body.appendChild(el); setTimeout(() => el.remove(), 1500);
+    }
+  }
+
+  // ===== MONTHLY GOAL =====
+  function saveMonthlyGoal() {
+    const val = document.getElementById('monthlyGoalInput').value;
+    const key = `monthlyGoal_${new Date().getFullYear()}_${new Date().getMonth()}`;
+    localStorage.setItem(key, val);
+  }
+  function loadMonthlyGoal() {
+    const now = new Date();
+    const key = `monthlyGoal_${now.getFullYear()}_${now.getMonth()}`;
+    const val = localStorage.getItem(key) || '';
+    document.getElementById('monthlyGoalInput').value = val;
+    document.getElementById('monthlyGoalMonth').textContent =
+      `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}`;
+  }
+
+  // ===== INIT =====
+  tasks = tasks.map(t => ({ ...t, type: t.type || 'todo' }));
+  checkAndReset();
+  loadMonthlyGoal();
+  renderHome();
+  renderCalendar();
+</script>
+</body>
+</html>
