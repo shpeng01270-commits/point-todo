@@ -478,7 +478,11 @@
   function weekKey(monday) {
     return monday.toISOString().slice(0,10);
   }
-  function todayStr() { return new Date().toISOString().slice(0,10); }
+  function todayStr() {
+    // 日本時間(UTC+9)で、午前3時リセット（3時前は前日扱い）
+    const d = new Date(Date.now() + 9*60*60*1000 - 3*60*60*1000);
+    return d.toISOString().slice(0,10);
+  }
   function thisWeekKey() { return weekKey(getMonday(new Date())); }
   function fmt(d) { return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`; }
 
