@@ -301,6 +301,9 @@
       </div>
       <div class="task-list" id="taskList"></div>
     </div>
+
+
+
   </div>
 
   <!-- ===== SCREEN: WEEKLY ===== -->
@@ -476,31 +479,44 @@
     const m = new Date(d); m.setDate(diff); m.setHours(0,0,0,0); return m;
   }
   function weekKey(monday) {
-    return monday.toISOString().slice(0,10);
+    const y = monday.getFullYear();
+    const m = String(monday.getMonth()+1).padStart(2,'0');
+    const d = String(monday.getDate()).padStart(2,'0');
+    return `${y}-${m}-${d}`;
   }
   function todayStr() {
     // 日本時間(UTC+9)で、午前3時リセット（3時前は前日扱い）
     const d = new Date(Date.now() + 9*60*60*1000 - 3*60*60*1000);
     return d.toISOString().slice(0,10);
   }
-  function thisWeekKey() { return weekKey(getMonday(new Date())); }
+  function thisWeekKey() {
+    // 日本時間(UTC+9)・3時オフセットで月曜を計算
+    const now = new Date(Date.now() + 9*60*60*1000 - 3*60*60*1000);
+    const day = now.getUTCDay();
+    const diff = now.getUTCDate() - day + (day === 0 ? -6 : 1);
+    const mon = new Date(now);
+    mon.setUTCDate(diff);
+    const y = mon.getUTCFullYear();
+    const mo = String(mon.getUTCMonth()+1).padStart(2,'0');
+    const d = String(mon.getUTCDate()).padStart(2,'0');
+    return `${y}-${mo}-${d}`;
+  }
   function fmt(d) { return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`; }
 
   // ===== RESET =====
   function checkAndReset() {
     const today = todayStr(), thisWeek = thisWeekKey();
     if (localStorage.getItem('lastDailyReset') !== today) {
-      // todo・dailyの完了済みを削除、dailyの未完了をリセット
-      tasks = tasks.filter(t => !(t.done && (t.type === 'todo' || t.type === 'daily')));
+      // todoの完了済みのみ削除、dailyはdoneをfalseに戻す（復活）
+      tasks = tasks.filter(t => !(t.done && t.type === 'todo'));
       tasks.forEach(t => { if (t.type === 'daily') t.done = false; });
-      // 今週のスポット完了済みも削除
+      // 今週のスポット完了済みは削除
       const wk = thisWeekKey();
       if (spotTasks[wk]) spotTasks[wk] = spotTasks[wk].filter(t => !t.done);
       localStorage.setItem('lastDailyReset', today);
     }
     if (localStorage.getItem('lastWeeklyReset') !== thisWeek) {
-      // weeklyの完了済みを削除、未完了をリセット
-      tasks = tasks.filter(t => !(t.done && t.type === 'weekly'));
+      // weeklyはdoneをfalseに戻す（復活）、削除しない
       tasks.forEach(t => { if (t.type === 'weekly') t.done = false; });
       if (weekCounts[thisWeek]) delete weekCounts[thisWeek];
       localStorage.setItem('lastWeeklyReset', thisWeek);
